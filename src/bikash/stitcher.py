@@ -227,4 +227,3 @@ class PanaromaStitcher:
         stitched_image = np.nan_to_num(stitched_image).astype(np.uint8)
 
         return stitched_image
-
