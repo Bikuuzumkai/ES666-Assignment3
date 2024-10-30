@@ -1,4 +1,4 @@
-%%writefile src/RugvedPatil/stitcher.py
+%%writefile src/bikash/stitcher.py
 import cv2
 import numpy as np
 import glob
