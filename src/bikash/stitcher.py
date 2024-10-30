@@ -60,7 +60,7 @@ class PanaromaStitcher:
     def normalize_points(self, pts):
         mean = np.mean(pts, axis=0)
         std = np.std(pts, axis=0)
-        std[std < 1e-8] = 1e-8  # avoiding division by zero (adding a small epsilon)
+        std[std < 1e-8] = 1e-8  
         scale = np.sqrt(2) / std
         T = np.array([[scale[0], 0, -scale[0]*mean[0]],
                       [0, scale[1], -scale[1]*mean[1]],
@@ -85,11 +85,11 @@ class PanaromaStitcher:
             logger.warning("SVD did not converge. Returning None for homography.")
             return None
         H_norm = Vt[-1].reshape(3, 3)
-        H = np.linalg.inv(T2) @ H_norm @ T1      # Denormalizing
+        H = np.linalg.inv(T2) @ H_norm @ T1     
         return H / H[2, 2]
 
     def compute_homography(self, pts1, pts2):
-        max_iterations = 2000  # Same as before
+        max_iterations = 2000 
         threshold = 3.0
         best_H = None
         max_inliers = 0
@@ -140,7 +140,7 @@ class PanaromaStitcher:
         return transformed_pts
 
     def warp_image(self, img1, img2, H, output_shape):
-        h_out, w_out = output_shape    # coordinate grid
+        h_out, w_out = output_shape    
         xx, yy = np.meshgrid(np.arange(w_out), np.arange(h_out))
         ones = np.ones_like(xx)
         coords = np.stack([xx, yy, ones], axis=-1).reshape(-1, 3)
@@ -150,7 +150,7 @@ class PanaromaStitcher:
         coords_transformed[coords_transformed[:, 2] == 0, 2] = 1e-10
         coords_transformed /= coords_transformed[:, 2, np.newaxis]
 
-        x_src = coords_transformed[:, 0]  #interpolate
+        x_src = coords_transformed[:, 0]  
         y_src = coords_transformed[:, 1]
 
         valid_indices = (
@@ -210,7 +210,7 @@ class PanaromaStitcher:
         mask1 = (stitched_image > 0).astype(np.float32)
         mask2 = (warped_img2 > 0).astype(np.float32)
         combined_mask = mask1 + mask2
-        safe_combined_mask = np.where(combined_mask == 0, 1, combined_mask)  # Prevent division by zero
+        safe_combined_mask = np.where(combined_mask == 0, 1, combined_mask) 
         stitched_image = (stitched_image * mask1 + warped_img2 * mask2) / safe_combined_mask
         stitched_image = np.nan_to_num(stitched_image).astype(np.uint8)
         return stitched_image
