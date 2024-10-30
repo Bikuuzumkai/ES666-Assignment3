@@ -3,19 +3,14 @@ import cv2
 import numpy as np
 import glob
 import logging
-
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 class PanaromaStitcher:
     def __init__(self):
-        # Use SIFT for feature detection
+        #SIFT 
         self.sift = cv2.SIFT_create()
-
-        # FLANN-based matcher for better performance
         index_params = dict(algorithm=1, trees=5)
-        search_params = dict(checks=50)  # Specify how many times the tree should be traversed
+        search_params = dict(checks=50)  
         self.matcher = cv2.FlannBasedMatcher(index_params, search_params)
 
     def make_panaroma_for_images_in(self, path):
@@ -40,7 +35,6 @@ class PanaromaStitcher:
 
             knn_matches = self.matcher.knnMatch(des1, des2, k=2)
 
-            # Ratio test for matches without cross-checking
             good_matches = []
             for m, n in knn_matches:
                 if m.distance < 0.85 * n.distance:
@@ -127,7 +121,6 @@ class PanaromaStitcher:
                 best_H = H_candidate
                 best_inliers = inliers
 
-            # Early stopping if enough inliers are found
             if len(inliers) > 0.8 * len(pts1):
                 break
 
@@ -172,7 +165,7 @@ class PanaromaStitcher:
         x1 = x0 + 1
         y1 = y0 + 1
 
-        wx = x_src - x0         # Bilinear interpolation weights
+        wx = x_src - x0        
         wy = y_src - y0
 
         img_flat = img2.reshape(-1, img2.shape[2])
@@ -189,7 +182,7 @@ class PanaromaStitcher:
         warped_pixels = (Ia * wa[:, np.newaxis] + Ib * wb[:, np.newaxis] +
                          Ic * wc[:, np.newaxis] + Id * wd[:, np.newaxis])
 
-        # output image
+
         warped_image = np.zeros((h_out * w_out, img2.shape[2]), dtype=img2.dtype)
         warped_image[valid_indices] = warped_pixels
         warped_image = warped_image.reshape(h_out, w_out, img2.shape[2])
@@ -210,20 +203,14 @@ class PanaromaStitcher:
                                 [0, 0, 1]])
 
         H_translated = translation @ H
-
         output_shape = (y_max - y_min, x_max - x_min)
         warped_img2 = self.warp_image(img1, img2, H_translated, output_shape)
         stitched_image = np.zeros((output_shape[0], output_shape[1], 3), dtype=img1.dtype)
         stitched_image[-y_min:-y_min + h1, -x_min:-x_min + w1] = img1
-
-        # masks
         mask1 = (stitched_image > 0).astype(np.float32)
         mask2 = (warped_img2 > 0).astype(np.float32)
-
-        # Blend images
         combined_mask = mask1 + mask2
         safe_combined_mask = np.where(combined_mask == 0, 1, combined_mask)  # Prevent division by zero
         stitched_image = (stitched_image * mask1 + warped_img2 * mask2) / safe_combined_mask
         stitched_image = np.nan_to_num(stitched_image).astype(np.uint8)
-
         return stitched_image
